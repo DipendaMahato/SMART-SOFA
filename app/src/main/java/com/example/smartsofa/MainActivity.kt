@@ -41,6 +41,8 @@ import com.example.smartsofa.ui.deviceinfo.DeviceInfoScreen
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Keep screen on continuously while app is open
+        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setContent {
             SmartSofaTheme {
                 Surface(
