@@ -49,15 +49,22 @@ fun SmartSofaTheme(
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
-            var ctx = view.context
-            while (ctx is android.content.ContextWrapper) {
-                if (ctx is Activity) {
-                    val window = ctx.window
-                    window.statusBarColor = colorScheme.background.toArgb()
-                    WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
-                    break
+            try {
+                var ctx = view.context
+                while (ctx is android.content.ContextWrapper) {
+                    if (ctx is Activity) {
+                        val window = ctx.window
+                        if (Build.VERSION.SDK_INT < 35) {
+                            @Suppress("DEPRECATION")
+                            window.statusBarColor = colorScheme.background.toArgb()
+                        }
+                        WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+                        break
+                    }
+                    ctx = ctx.baseContext
                 }
-                ctx = ctx.baseContext
+            } catch (e: Throwable) {
+                // Safely handle API 35+ or custom context wrappers
             }
         }
     }
