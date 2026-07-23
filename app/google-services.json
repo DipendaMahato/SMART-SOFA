@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "827257182992",
+    "firebase_url": "https://smartsofa-11154-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "smartsofa-11154",
+    "storage_bucket": "smartsofa-11154.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:827257182992:android:88fbaafa79dbfc634be395",
+        "android_client_info": {
+          "package_name": "com.smartsofa.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "827257182992-1fnqkshtprdfthl52r66a02dveedbfr9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.smartsofa.app",
+            "certificate_hash": "48f27fc613ccaa5ba28b30f7fa42f22a86fc151b"
+          }
+        },
+        {
+          "client_id": "827257182992-eukqph2trjbl4fvhsa40dvvpeu1ik83b.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDytaVOCxt1UB2vVN3DBfkUZyMg21rnGfs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "827257182992-eukqph2trjbl4fvhsa40dvvpeu1ik83b.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
