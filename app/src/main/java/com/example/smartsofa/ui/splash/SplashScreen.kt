@@ -85,20 +85,18 @@ fun SplashScreen(
     // All launch effects in ONE LaunchedEffect to avoid multiple coroutines racing
     LaunchedEffect(Unit) {
         // Phase 1: animate logo in
-        delay(200)
-        launch { logoAlpha.animateTo(1f, tween(500, easing = LinearEasing)) }
-        logoScale.animateTo(1f, tween(500, easing = FastOutSlowInEasing))
+        delay(150)
+        launch { logoAlpha.animateTo(1f, tween(400, easing = LinearEasing)) }
+        logoScale.animateTo(1f, tween(400, easing = FastOutSlowInEasing))
 
         // Phase 2: show text
-        delay(200)
+        delay(150)
         textVisible = true
-        delay(250)
+        delay(150)
         subtitleVisible = true
 
-        // Phase 3: wait for full screen render before navigating
-        // 4500ms total — gives enough time for JIT compilation on first run
-        // so navigation never fires on a half-drawn screen
-        delay(3800)
+        // Phase 3: Fast responsive navigation (1.5s total)
+        delay(800)
 
         if (!hasNavigated) {
             hasNavigated = true

@@ -71,7 +71,8 @@ class BleProvisioningManager(private val context: Context) {
     fun scanDevices(): Flow<BleState> = callbackFlow {
         val discoveredDevices = mutableListOf<BluetoothDevice>()
         
-        if (bluetoothAdapter == null || !bluetoothAdapter!!.isEnabled) {
+        val adapter = bluetoothAdapter
+        if (adapter == null || !adapter.isEnabled) {
             trySend(BleState.Error("Bluetooth is disabled or not supported"))
             close()
             return@callbackFlow

@@ -158,10 +158,11 @@ fun WifiConfigScreen(
                             requestPermissionsAndScan()
                         },
                         onConnectClicked = {
-                            if (selectedDevice == null) {
+                            val device = selectedDevice
+                            if (device == null) {
                                 requestPermissionsAndScan()
                             } else {
-                                viewModel.provision(selectedDevice!!)
+                                viewModel.provision(device)
                             }
                         }
                     )
@@ -436,9 +437,9 @@ fun WifiInputCard(
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp)
             )
-            if (viewModel.ssidError != null) {
+            viewModel.ssidError?.let { err ->
                 Text(
-                    text = viewModel.ssidError!!,
+                    text = err,
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(start = 8.dp, top = 4.dp)
@@ -468,9 +469,9 @@ fun WifiInputCard(
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp)
             )
-            if (viewModel.passwordError != null) {
+            viewModel.passwordError?.let { err ->
                 Text(
-                    text = viewModel.passwordError!!,
+                    text = err,
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(start = 8.dp, top = 4.dp)

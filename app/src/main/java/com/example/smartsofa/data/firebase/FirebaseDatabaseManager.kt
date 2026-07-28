@@ -29,7 +29,8 @@ object FirebaseDatabaseManager {
                 }
             }
             override fun onCancelled(error: DatabaseError) {
-                close(error.toException())
+                android.util.Log.w("FirebaseDatabaseManager", "observeSofaStatus cancelled: ${error.message}")
+                trySend(SofaStatus())
             }
         }
         database.child(Constants.PATH_SOFA).addValueEventListener(listener)
@@ -47,7 +48,8 @@ object FirebaseDatabaseManager {
                 }
             }
             override fun onCancelled(error: DatabaseError) {
-                close(error.toException())
+                android.util.Log.w("FirebaseDatabaseManager", "observeDeviceStatus cancelled: ${error.message}")
+                trySend(DeviceStatus())
             }
         }
         database.child(Constants.PATH_DEVICES).addValueEventListener(listener)
@@ -65,7 +67,8 @@ object FirebaseDatabaseManager {
                 }
             }
             override fun onCancelled(error: DatabaseError) {
-                close(error.toException())
+                android.util.Log.w("FirebaseDatabaseManager", "observeControls cancelled: ${error.message}")
+                trySend(Controls())
             }
         }
         database.child(Constants.PATH_CONTROLS).addValueEventListener(listener)
@@ -83,7 +86,8 @@ object FirebaseDatabaseManager {
                 }
             }
             override fun onCancelled(error: DatabaseError) {
-                close(error.toException())
+                android.util.Log.w("FirebaseDatabaseManager", "observeElectricalInfo cancelled: ${error.message}")
+                trySend(ElectricalInfo())
             }
         }
         database.child(Constants.PATH_ELECTRICAL).addValueEventListener(listener)
@@ -100,7 +104,8 @@ object FirebaseDatabaseManager {
                 trySend(list)
             }
             override fun onCancelled(error: DatabaseError) {
-                close(error.toException())
+                android.util.Log.w("FirebaseDatabaseManager", "observeHistory cancelled: ${error.message}")
+                trySend(emptyList())
             }
         }
         database.child(Constants.PATH_HISTORY).addValueEventListener(listener)
@@ -117,7 +122,8 @@ object FirebaseDatabaseManager {
                 trySend(list)
             }
             override fun onCancelled(error: DatabaseError) {
-                close(error.toException())
+                android.util.Log.w("FirebaseDatabaseManager", "observeNotifications cancelled: ${error.message}")
+                trySend(emptyList())
             }
         }
         database.child(Constants.PATH_NOTIFICATIONS).addValueEventListener(listener)
@@ -134,7 +140,8 @@ object FirebaseDatabaseManager {
                 trySend(list)
             }
             override fun onCancelled(error: DatabaseError) {
-                close(error.toException())
+                android.util.Log.w("FirebaseDatabaseManager", "observeEnergyDaily cancelled: ${error.message}")
+                trySend(emptyList())
             }
         }
         database.child(Constants.PATH_ENERGY).child("daily").addValueEventListener(listener)
@@ -151,7 +158,8 @@ object FirebaseDatabaseManager {
                 trySend(list)
             }
             override fun onCancelled(error: DatabaseError) {
-                close(error.toException())
+                android.util.Log.w("FirebaseDatabaseManager", "observeEnergyWeekly cancelled: ${error.message}")
+                trySend(emptyList())
             }
         }
         database.child(Constants.PATH_ENERGY).child("weekly").addValueEventListener(listener)
@@ -168,7 +176,8 @@ object FirebaseDatabaseManager {
                 trySend(list)
             }
             override fun onCancelled(error: DatabaseError) {
-                close(error.toException())
+                android.util.Log.w("FirebaseDatabaseManager", "observeEnergyMonthly cancelled: ${error.message}")
+                trySend(emptyList())
             }
         }
         database.child(Constants.PATH_ENERGY).child("monthly").addValueEventListener(listener)
@@ -182,7 +191,8 @@ object FirebaseDatabaseManager {
                 trySend(user)
             }
             override fun onCancelled(error: DatabaseError) {
-                close(error.toException())
+                android.util.Log.w("FirebaseDatabaseManager", "getUserProfile cancelled: ${error.message}")
+                trySend(User(uid = uid))
             }
         }
         database.child(Constants.PATH_USERS).child(uid).child(Constants.PATH_PROFILE).addValueEventListener(listener)

@@ -42,18 +42,11 @@ import com.example.smartsofa.ui.deviceinfo.DeviceInfoScreen
 
 class MainActivity : ComponentActivity() {
 
-    // WakeLock keeps the CPU running and screen on even if FLAG_KEEP_SCREEN_ON
-    // isn't sufficient on certain emulator/ROM configurations
-    private var wakeLock: PowerManager.WakeLock? = null
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Layer 1: Window-level flag — simplest, works while Activity is in foreground
+        // Keep screen on safely while activity is in foreground without triggering OS battery watchdog kills
         window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-
-        // Layer 2: PowerManager WakeLock — survives deeper than window flags
-        acquireWakeLock()
 
         setContent {
             SmartSofaTheme {
@@ -68,47 +61,10 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun acquireWakeLock() {
-        try {
-            val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
-            @Suppress("DEPRECATION")
-            wakeLock = powerManager.newWakeLock(
-                // SCREEN_BRIGHT_WAKE_LOCK keeps screen fully bright.
-                // Deprecated in API 33 in favour of FLAG_KEEP_SCREEN_ON (which we also set).
-                // Still fully functional on all Android versions as a secondary lock.
-                PowerManager.SCREEN_BRIGHT_WAKE_LOCK or PowerManager.ACQUIRE_CAUSES_WAKEUP,
-                "SmartSofa::ScreenWakeLock"
-            ).also { lock ->
-                // Acquire indefinitely — released only when app is destroyed
-                lock.acquire()
-            }
-        } catch (e: Exception) {
-            // If WakeLock acquisition fails (e.g. missing permission), FLAG_KEEP_SCREEN_ON
-            // is still active as a fallback — log and continue
-            android.util.Log.w("MainActivity", "WakeLock acquisition failed: ${e.message}")
-        }
-    }
-
     override fun onResume() {
         super.onResume()
-        // Re-apply window flag every time app comes to foreground
+        // Re-apply window flag whenever app comes to foreground
         window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        // Re-acquire wakelock if it was released
-        if (wakeLock?.isHeld == false) {
-            try { wakeLock?.acquire() } catch (e: Exception) { /* ignore */ }
-        }
-    }
-
-    override fun onDestroy() {
-        // Release WakeLock when the app is truly closed by user
-        try {
-            if (wakeLock?.isHeld == true) {
-                wakeLock?.release()
-            }
-        } catch (e: Exception) {
-            android.util.Log.w("MainActivity", "WakeLock release error: ${e.message}")
-        }
-        super.onDestroy()
     }
 }
 

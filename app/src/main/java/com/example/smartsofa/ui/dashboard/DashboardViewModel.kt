@@ -54,15 +54,17 @@ class DashboardViewModel : ViewModel() {
     }
 
     private fun loadUserName() {
-        val uid = authManager.getCurrentUser()?.uid ?: return
+        val user = authManager.getCurrentUser() ?: return
+        val uid = user.uid
         viewModelScope.launch {
             databaseManager.getUserProfile(uid).collect { profile ->
+                val currentUser = authManager.getCurrentUser()
+                val displayName = currentUser?.displayName
+                val email = currentUser?.email
                 _userName.value = when {
                     profile.fullName.isNotBlank() -> profile.fullName
-                    authManager.getCurrentUser()?.displayName?.isNotBlank() == true ->
-                        authManager.getCurrentUser()!!.displayName!!
-                    authManager.getCurrentUser()?.email != null ->
-                        authManager.getCurrentUser()!!.email!!.substringBefore("@")
+                    !displayName.isNullOrBlank() -> displayName
+                    !email.isNullOrBlank() -> email.substringBefore("@")
                     else -> "User"
                 }
             }
@@ -71,10 +73,9 @@ class DashboardViewModel : ViewModel() {
 
     private fun updateTime() {
         viewModelScope.launch {
+            val sdf = SimpleDateFormat("MMM dd, yyyy HH:mm:ss", Locale.getDefault())
             while (true) {
-                val sdf = SimpleDateFormat("MMM dd, yyyy HH:mm:ss", Locale.getDefault())
-                val now = sdf.format(Date())
-                _currentTime.value = now
+                _currentTime.value = sdf.format(Date())
                 delay(1000)
             }
         }
