@@ -50,7 +50,7 @@ export default function WifiConfigModal({ isOpen, onClose, deviceStatus }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in">
       <div className="glass-card rounded-3xl border border-slate-800 w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh] shadow-2xl relative">
         
         {/* Modal Header */}
@@ -175,7 +175,7 @@ export default function WifiConfigModal({ isOpen, onClose, deviceStatus }) {
 
         {/* Success Overlay */}
         {isSuccess && (
-          <div className="absolute inset-0 bg-slate-950/95 backdrop-blur-md z-50 flex flex-col items-center justify-center p-6 text-center space-y-4 animate-fadeIn">
+          <div className="absolute inset-0 bg-slate-950/95 backdrop-blur-md z-50 flex flex-col items-center justify-center p-6 text-center space-y-4 animate-fade-in">
             <div className="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
               <CheckCircle2 className="w-10 h-10" />
             </div>

@@ -51,7 +51,7 @@ export default function NotificationsModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
       <div className="glass-card rounded-3xl border border-slate-800 w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh] shadow-2xl">
         
         {/* Modal Header */}

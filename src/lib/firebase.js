@@ -5,40 +5,103 @@ import {
   onValue, 
   set, 
   remove, 
-  update,
   off 
 } from "firebase/database";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+  signOut,
+  onAuthStateChanged,
+  updateProfile
+} from "firebase/auth";
 
 const firebaseConfig = {
-  databaseURL: "https://smartsofa-11154-default-rtdb.asia-southeast1.firebasedatabase.app/"
+  apiKey: "AIzaSyDytaVOCxt1UB2vVN3DBfkUZyMg21rnGfs",
+  authDomain: "smartsofa-11154.firebaseapp.com",
+  databaseURL: "https://smartsofa-11154-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "smartsofa-11154",
+  storageBucket: "smartsofa-11154.firebasestorage.app",
+  messagingSenderId: "827257182992",
+  appId: "1:827257182992:android:88fbaafa79dbfc634be395"
 };
 
+let app;
 let db = null;
+let auth = null;
+
 try {
-  const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+  app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
   db = getDatabase(app);
+  auth = getAuth(app);
 } catch (err) {
-  console.warn("Firebase initialization warning (running in fallback demo mode):", err);
+  console.warn("Firebase initialization warning:", err);
 }
 
-export { db };
+export { db, auth };
 
-// Default initial state matching Kotlin models
+// ─────────────────────────────────────────────
+// AUTH OPERATIONS
+// ─────────────────────────────────────────────
+
+export async function registerUser(email, password, fullName) {
+  if (!auth) throw new Error("Auth not initialized");
+  const cred = await createUserWithEmailAndPassword(auth, email, password);
+  await updateProfile(cred.user, { displayName: fullName });
+  // Save user profile to RTDB
+  if (db) {
+    await set(ref(db, `users/${cred.user.uid}/profile`), {
+      fullName,
+      email,
+      createdAt: Date.now()
+    });
+  }
+  return cred.user;
+}
+
+export async function loginUser(email, password) {
+  if (!auth) throw new Error("Auth not initialized");
+  const cred = await signInWithEmailAndPassword(auth, email, password);
+  return cred.user;
+}
+
+export async function logoutUser() {
+  if (!auth) return;
+  await signOut(auth);
+}
+
+export async function resetPassword(email) {
+  if (!auth) throw new Error("Auth not initialized");
+  await sendPasswordResetEmail(auth, email);
+}
+
+export function onAuthChange(callback) {
+  if (!auth) {
+    callback(null);
+    return () => {};
+  }
+  return onAuthStateChanged(auth, callback);
+}
+
+// ─────────────────────────────────────────────
+// DEFAULT STATE (Fallback/Demo)
+// ─────────────────────────────────────────────
+
 export const DEFAULT_SOFA_STATUS = {
   occupied: false,
   lastOccupiedAt: Date.now() - 450000,
   lastEmptyAt: Date.now() - 1200000,
-  heatLevel: 2, // 0: Off, 1: Low, 2: Med, 3: High
-  reclinerAngle: 110, // 90deg (upright) to 150deg (recline)
-  massageMode: 'wave', // 'off', 'gentle', 'wave', 'intense'
+  heatLevel: 2,
+  reclinerAngle: 110,
+  massageMode: 'wave',
 };
 
 export const DEFAULT_CONTROLS = {
   fan: false,
   light: true,
-  mode: "manual", // 'manual' or 'auto'
+  mode: "manual",
   relayStatus: true,
-  heating: false,
   lightColor: "#3B82F6",
   lightBrightness: 80,
   fanSpeed: 3
@@ -72,103 +135,42 @@ export const DEFAULT_DEVICE_STATUS = {
 };
 
 export const DEFAULT_HISTORY = [
-  {
-    id: "h1",
-    type: "person_sitting",
-    title: "Person Sitting",
-    description: "Occupancy sensor detected presence on main cushion.",
-    timestamp: Date.now() - 300000
-  },
-  {
-    id: "h2",
-    type: "light_on",
-    title: "Ambient Light On",
-    description: "Light mode adjusted to Royal Blue preset.",
-    timestamp: Date.now() - 900000
-  },
-  {
-    id: "h3",
-    type: "fan_on",
-    title: "Ventilation Active",
-    description: "Auto cooling fan turned on due to ambient temp threshold.",
-    timestamp: Date.now() - 1800000
-  },
-  {
-    id: "h4",
-    type: "esp32_connected",
-    title: "ESP32 Connected",
-    description: "Main controller ESP32-A synchronized telemetry.",
-    timestamp: Date.now() - 3600000
-  }
+  { id: "h1", type: "person_sitting", title: "Person Sitting", description: "Occupancy sensor detected presence on main cushion.", timestamp: Date.now() - 300000 },
+  { id: "h2", type: "light_on", title: "Ambient Light On", description: "Light mode adjusted to Royal Blue preset.", timestamp: Date.now() - 900000 },
+  { id: "h3", type: "fan_on", title: "Ventilation Active", description: "Auto cooling fan turned on due to ambient temp threshold.", timestamp: Date.now() - 1800000 },
+  { id: "h4", type: "esp32_connected", title: "ESP32 Connected", description: "Main controller ESP32-A synchronized telemetry.", timestamp: Date.now() - 3600000 }
 ];
 
 export const DEFAULT_NOTIFICATIONS = [
-  {
-    id: "n1",
-    type: "person_sitting",
-    title: "Occupancy Detected",
-    message: "Someone sat down on Smart Sofa 10 minutes ago.",
-    timestamp: Date.now() - 600000,
-    read: false
-  },
-  {
-    id: "n2",
-    type: "esp32_offline",
-    title: "Telemetry Warning",
-    message: "ESP32-B secondary module experienced temporary signal drop.",
-    timestamp: Date.now() - 3600000,
-    read: true
-  },
-  {
-    id: "n3",
-    type: "firebase_connected",
-    title: "Cloud Sync Active",
-    message: "Realtime Database sync restored successfully.",
-    timestamp: Date.now() - 7200000,
-    read: true
-  }
+  { id: "n1", type: "person_sitting", title: "Occupancy Detected", message: "Someone sat down on Smart Sofa 10 minutes ago.", timestamp: Date.now() - 600000, read: false },
+  { id: "n2", type: "esp32_offline", title: "Telemetry Warning", message: "ESP32-B secondary module experienced temporary signal drop.", timestamp: Date.now() - 3600000, read: true },
+  { id: "n3", type: "firebase_connected", title: "Cloud Sync Active", message: "Realtime Database sync restored successfully.", timestamp: Date.now() - 7200000, read: true }
 ];
 
-// Database operations with fallback
+// ─────────────────────────────────────────────
+// DATABASE OPERATIONS
+// ─────────────────────────────────────────────
+
 export function subscribePath(path, callback, defaultValue) {
-  if (!db) {
-    callback(defaultValue);
-    return () => {};
-  }
+  if (!db) { callback(defaultValue); return () => {}; }
   const dbRef = ref(db, path);
-  const listener = onValue(
-    dbRef,
-    (snapshot) => {
-      if (snapshot.exists()) {
-        callback(snapshot.val());
-      } else {
-        callback(defaultValue);
-      }
-    },
-    (error) => {
-      console.warn(`Firebase read error for ${path}:`, error);
-      callback(defaultValue);
-    }
-  );
+  const listener = onValue(dbRef, (snap) => {
+    callback(snap.exists() ? snap.val() : defaultValue);
+  }, (err) => {
+    console.warn(`Firebase read error for ${path}:`, err);
+    callback(defaultValue);
+  });
   return () => off(dbRef, 'value', listener);
 }
 
 export async function updateControl(field, value) {
   if (!db) return;
-  try {
-    const dbRef = ref(db, `controls/${field}`);
-    await set(dbRef, value);
-  } catch (e) {
-    console.warn("Failed to update control on Firebase:", e);
-  }
+  try { await set(ref(db, `controls/${field}`), value); }
+  catch (e) { console.warn("updateControl error:", e); }
 }
 
 export async function updateSofaStatus(field, value) {
   if (!db) return;
-  try {
-    const dbRef = ref(db, `sofa/${field}`);
-    await set(dbRef, value);
-  } catch (e) {
-    console.warn("Failed to update sofa status on Firebase:", e);
-  }
+  try { await set(ref(db, `sofa/${field}`), value); }
+  catch (e) { console.warn("updateSofaStatus error:", e); }
 }

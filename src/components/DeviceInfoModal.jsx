@@ -20,7 +20,7 @@ export default function DeviceInfoModal({ isOpen, onClose, deviceStatus }) {
   const minutes = Math.floor((uptime % 3600) / 60);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in">
       <div className="glass-card rounded-3xl border border-slate-800 w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh] shadow-2xl">
         
         {/* Modal Header */}
