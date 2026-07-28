@@ -4,6 +4,7 @@ import com.example.smartsofa.data.model.User
 import com.example.smartsofa.utils.Constants
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
@@ -15,9 +16,11 @@ sealed class AuthResult<out T> {
 
 object FirebaseAuthManager {
     private val auth = FirebaseAuth.getInstance()
-    private val database = FirebaseDatabase.getInstance("https://smartsofa-11154-default-rtdb.asia-southeast1.firebasedatabase.app/").reference
+    private val database by lazy {
+        FirebaseDatabase.getInstance("https://smartsofa-11154-default-rtdb.asia-southeast1.firebasedatabase.app/").reference
+    }
 
-    suspend fun login(email: String, password: String): AuthResult<FirebaseUser> = 
+    suspend fun login(email: String, password: String): AuthResult<FirebaseUser> =
         suspendCancellableCoroutine { continuation ->
             auth.signInWithEmailAndPassword(email, password)
                 .addOnSuccessListener { result ->
@@ -39,20 +42,27 @@ object FirebaseAuthManager {
                 .addOnSuccessListener { result ->
                     val user = result.user
                     if (user != null) {
-                        // Save profile
-                        val userModel = User(
-                            uid = user.uid,
-                            fullName = fullName,
-                            email = email,
-                            createdAt = System.currentTimeMillis()
-                        )
-                        database.child(Constants.PATH_USERS).child(user.uid).child(Constants.PATH_PROFILE)
-                            .setValue(userModel)
-                            .addOnSuccessListener {
-                                continuation.resume(AuthResult.Success(user))
-                            }
-                            .addOnFailureListener { exception ->
-                                continuation.resume(AuthResult.Error(exception))
+                        // Set displayName in Firebase Auth profile
+                        val profileUpdate = UserProfileChangeRequest.Builder()
+                            .setDisplayName(fullName)
+                            .build()
+                        user.updateProfile(profileUpdate)
+                            .addOnCompleteListener {
+                                // Save full profile to Realtime Database
+                                val userModel = User(
+                                    uid = user.uid,
+                                    fullName = fullName,
+                                    email = email,
+                                    createdAt = System.currentTimeMillis()
+                                )
+                                database.child(Constants.PATH_USERS).child(user.uid).child(Constants.PATH_PROFILE)
+                                    .setValue(userModel)
+                                    .addOnSuccessListener {
+                                        continuation.resume(AuthResult.Success(user))
+                                    }
+                                    .addOnFailureListener { exception ->
+                                        continuation.resume(AuthResult.Error(exception))
+                                    }
                             }
                     } else {
                         continuation.resume(AuthResult.Error(Exception("User is null after registration")))
@@ -63,6 +73,11 @@ object FirebaseAuthManager {
                 }
         }
 
+    /**
+     * Sends a password reset email via Firebase Auth.
+     * Firebase uses its own email template — the app key (kqas rhzk xpzf pkdm)
+     * is used for the custom SMTP relay if configured in Firebase Console.
+     */
     suspend fun forgotPassword(email: String): AuthResult<Unit> =
         suspendCancellableCoroutine { continuation ->
             auth.sendPasswordResetEmail(email)

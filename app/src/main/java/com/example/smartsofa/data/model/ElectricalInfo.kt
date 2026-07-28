@@ -1,11 +1,14 @@
 package com.example.smartsofa.data.model
 
+import com.google.firebase.database.IgnoreExtraProperties
+
+@IgnoreExtraProperties
 data class ElectricalInfo(
-    val voltage: Float = 0f,
-    val current: Float = 0f,
-    val power: Float = 0f,
-    val dailyEnergy: Float = 0f,
-    val weeklyEnergy: Float = 0f,
-    val monthlyEnergy: Float = 0f,
+    val voltage: Double = 0.0,
+    val current: Double = 0.0,
+    val power: Double = 0.0,
+    val dailyEnergy: Double = 0.0,
+    val weeklyEnergy: Double = 0.0,
+    val monthlyEnergy: Double = 0.0,
     val relayStatus: Boolean = false
 )

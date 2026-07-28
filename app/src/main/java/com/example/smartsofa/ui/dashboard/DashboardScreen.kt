@@ -153,10 +153,13 @@ fun SofaStatusCard(sofaStatus: SofaStatus) {
         targetValue = if (sofaStatus.occupied) Color(0xFF4CAF50) else Color(0xFF9E9E9E),
         animationSpec = tween(500), label = ""
     )
-    val timeChange = if (sofaStatus.occupied) {
-        System.currentTimeMillis() - sofaStatus.lastEmptyAt
-    } else {
-        System.currentTimeMillis() - sofaStatus.lastOccupiedAt
+    // Fix: when occupied, measure time since lastOccupiedAt (not lastEmptyAt)
+    val timeChange = when {
+        sofaStatus.occupied && sofaStatus.lastOccupiedAt > 0L ->
+            System.currentTimeMillis() - sofaStatus.lastOccupiedAt
+        !sofaStatus.occupied && sofaStatus.lastEmptyAt > 0L ->
+            System.currentTimeMillis() - sofaStatus.lastEmptyAt
+        else -> 0L
     }
     val minutes = TimeUnit.MILLISECONDS.toMinutes(timeChange).coerceAtLeast(0)
 
@@ -224,9 +227,10 @@ fun ControlPanelCard(controls: Controls, viewModel: DashboardViewModel) {
                 Switch(checked = controls.light, onCheckedChange = { viewModel.toggleLight() })
             }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("Mode: ${controls.mode}")
-                Button(onClick = { viewModel.setMode(if (controls.mode == "Auto") "Manual" else "Auto") }) {
-                    Text(if (controls.mode == "Auto") "Set Manual" else "Set Auto")
+                Text("Mode: ${controls.mode.replaceFirstChar { it.uppercase() }}")
+                val isAuto = controls.mode.equals("auto", ignoreCase = true)
+                Button(onClick = { viewModel.setMode(if (isAuto) "manual" else "auto") }) {
+                    Text(if (isAuto) "Set Manual" else "Set Auto")
                 }
             }
         }

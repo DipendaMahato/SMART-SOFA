@@ -1,5 +1,8 @@
 package com.example.smartsofa.data.model
 
+import com.google.firebase.database.IgnoreExtraProperties
+
+@IgnoreExtraProperties
 data class NotificationItem(
     val id: String = "",
     val type: String = "",

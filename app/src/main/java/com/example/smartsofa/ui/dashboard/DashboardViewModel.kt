@@ -50,6 +50,23 @@ class DashboardViewModel : ViewModel() {
     init {
         updateTime()
         updateSyncTime()
+        loadUserName()
+    }
+
+    private fun loadUserName() {
+        val uid = authManager.getCurrentUser()?.uid ?: return
+        viewModelScope.launch {
+            databaseManager.getUserProfile(uid).collect { profile ->
+                _userName.value = when {
+                    profile.fullName.isNotBlank() -> profile.fullName
+                    authManager.getCurrentUser()?.displayName?.isNotBlank() == true ->
+                        authManager.getCurrentUser()!!.displayName!!
+                    authManager.getCurrentUser()?.email != null ->
+                        authManager.getCurrentUser()!!.email!!.substringBefore("@")
+                    else -> "User"
+                }
+            }
+        }
     }
 
     private fun updateTime() {
