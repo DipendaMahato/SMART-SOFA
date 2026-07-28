@@ -21,7 +21,7 @@ import {
   DEFAULT_NOTIFICATIONS
 } from './lib/firebase';
 
-import { LayoutDashboard, Bell, Settings, LogOut, Armchair, Loader2 } from 'lucide-react';
+import { Bell, Settings, LogOut, Armchair, Loader2 } from 'lucide-react';
 
 export default function App() {
   const [user, setUser] = useState(undefined);
@@ -120,16 +120,14 @@ export default function App() {
       />
 
       <main className="max-w-7xl mx-auto px-4 lg:px-8 py-6 space-y-6 pb-12">
-        {activeTab === 'dashboard' && (
-          <div className="space-y-6 animate-slide-up">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <SofaStatusCard sofaStatus={sofaStatus} onUpdateStatus={handleSofaStatusChange} />
-              <DeviceStatusCard deviceStatus={deviceStatus} />
-            </div>
-            <ElectricalInfoCard electricalInfo={electricalInfo} />
-            <ControlPanel controls={controls} onToggleFan={() => handleControlChange('fan', !controls.fan)} onToggleLight={() => handleControlChange('light', !controls.light)} />
+        <div className="space-y-6 animate-slide-up">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <SofaStatusCard sofaStatus={sofaStatus} onUpdateStatus={handleSofaStatusChange} />
+            <DeviceStatusCard deviceStatus={deviceStatus} />
           </div>
-        )}
+          <ElectricalInfoCard electricalInfo={electricalInfo} />
+          <ControlPanel controls={controls} onToggleFan={() => handleControlChange('fan', !controls.fan)} onToggleLight={() => handleControlChange('light', !controls.light)} />
+        </div>
       </main>
 
       <NotificationsModal
