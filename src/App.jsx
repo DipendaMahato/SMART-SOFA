@@ -7,13 +7,20 @@ import DeviceStatusCard from './components/DeviceStatusCard';
 import ElectricalInfoCard from './components/ElectricalInfoCard';
 import NotificationsModal from './components/NotificationsModal';
 import SettingsModal from './components/SettingsModal';
+import DeviceInfoModal from './components/DeviceInfoModal';
+import WifiConfigModal from './components/WifiConfigModal';
 
 import {
   subscribePath,
   updateControl,
   updateSofaStatus,
+  updateElectricalInfo,
+  updateNotifications,
   onAuthChange,
   logoutUser,
+  updateUserProfile,
+  loadUserProfile,
+  changeUserPassword,
   DEFAULT_SOFA_STATUS,
   DEFAULT_CONTROLS,
   DEFAULT_ELECTRICAL_INFO,
@@ -21,10 +28,11 @@ import {
   DEFAULT_NOTIFICATIONS
 } from './lib/firebase';
 
-import { Bell, Settings, LogOut, Armchair, Loader2 } from 'lucide-react';
+import { Armchair, Loader2 } from 'lucide-react';
 
 export default function App() {
   const [user, setUser] = useState(undefined);
+  const [userProfile, setUserProfile] = useState(null);
   const [sofaStatus, setSofaStatus] = useState(DEFAULT_SOFA_STATUS);
   const [controls, setControls] = useState(DEFAULT_CONTROLS);
   const [electricalInfo, setElectricalInfo] = useState(DEFAULT_ELECTRICAL_INFO);
@@ -33,11 +41,30 @@ export default function App() {
 
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isDeviceInfoOpen, setIsDeviceInfoOpen] = useState(false);
+  const [isWifiConfigOpen, setIsWifiConfigOpen] = useState(false);
 
   useEffect(() => {
     const unsub = onAuthChange(firebaseUser => setUser(firebaseUser ?? null));
     return unsub;
   }, []);
+
+  // Load user profile whenever user changes
+  useEffect(() => {
+    if (!user) { setUserProfile(null); return; }
+    loadUserProfile(user.uid).then(profile => {
+      if (profile) setUserProfile(profile);
+      else {
+        // Bootstrap profile from Firebase Auth fields
+        setUserProfile({
+          displayName: user.displayName || user.email?.split('@')[0] || 'User',
+          email: user.email || '',
+          location: 'Main Living Room',
+          avatarColor: 'from-blue-600 to-cyan-400'
+        });
+      }
+    });
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -58,6 +85,10 @@ export default function App() {
   const handleControlChange = async (field, value) => {
     setControls(prev => ({ ...prev, [field]: value }));
     await updateControl(field, value);
+    if (field === 'relayStatus') {
+      setElectricalInfo(prev => ({ ...prev, relayStatus: value }));
+      await updateElectricalInfo('relayStatus', value);
+    }
   };
 
   const handleSofaStatusChange = async (field, value) => {
@@ -65,20 +96,41 @@ export default function App() {
     await updateSofaStatus(field, value);
   };
 
+  const handleUpdateUser = async (profileData) => {
+    if (!user) return;
+    const updated = { ...profileData, email: user.email }; // keep auth email
+    setUserProfile(updated);
+    await updateUserProfile(user.uid, updated);
+  };
+
   const handleMarkRead = (id) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    setNotifications(prev => {
+      const next = prev.map(n => n.id === id ? { ...n, read: true } : n);
+      updateNotifications(next);
+      return next;
+    });
   };
   const handleDeleteNotif = (id) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
+    setNotifications(prev => {
+      const next = prev.filter(n => n.id !== id);
+      updateNotifications(next);
+      return next;
+    });
   };
   const handleClearAllNotifs = () => {
     setNotifications([]);
+    updateNotifications([]);
   };
   const handleMarkAllRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    setNotifications(prev => {
+      const next = prev.map(n => ({ ...n, read: true }));
+      updateNotifications(next);
+      return next;
+    });
   };
 
   const handleLogout = async () => { await logoutUser(); };
+
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -112,6 +164,8 @@ export default function App() {
     <div className="min-h-screen mesh-bg">
       <Header
         user={user}
+        userProfile={userProfile}
+        deviceName={controls?.deviceName}
         deviceStatus={deviceStatus}
         unreadNotificationsCount={unreadCount}
         onOpenNotifications={() => { setIsNotificationsOpen(true); handleMarkAllRead(); }}
@@ -119,14 +173,26 @@ export default function App() {
         onLogout={handleLogout}
       />
 
-      <main className="max-w-7xl mx-auto px-4 lg:px-8 py-6 space-y-6 pb-12">
-        <div className="space-y-6 animate-slide-up">
+      <main className="max-w-[1400px] mx-auto px-4 lg:px-8 py-6 space-y-6 pb-12">
+        <div className="animate-slide-up">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <SofaStatusCard sofaStatus={sofaStatus} onUpdateStatus={handleSofaStatusChange} />
-            <DeviceStatusCard deviceStatus={deviceStatus} />
+            <DeviceStatusCard
+              deviceStatus={deviceStatus}
+              onOpenDeviceInfo={() => setIsDeviceInfoOpen(true)}
+              onOpenWifiConfig={() => setIsWifiConfigOpen(true)}
+            />
+            <ElectricalInfoCard electricalInfo={electricalInfo} />
+            <ControlPanel
+              controls={controls}
+              roomTemp={electricalInfo?.roomTemp ?? 24.5}
+              onToggleFan={() => handleControlChange('fan', !controls.fan)}
+              onToggleLight={() => handleControlChange('light', !controls.light)}
+              onToggleRelay={() => handleControlChange('relayStatus', !(controls?.relayStatus ?? true))}
+              onUpdateControl={handleControlChange}
+              onOpenSettings={() => setIsSettingsOpen(true)}
+            />
           </div>
-          <ElectricalInfoCard electricalInfo={electricalInfo} />
-          <ControlPanel controls={controls} onToggleFan={() => handleControlChange('fan', !controls.fan)} onToggleLight={() => handleControlChange('light', !controls.light)} />
         </div>
       </main>
 
@@ -142,7 +208,22 @@ export default function App() {
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         user={user}
+        userProfile={userProfile}
+        controls={controls}
+        onUpdateControl={handleControlChange}
+        onUpdateUser={handleUpdateUser}
+        onChangePassword={changeUserPassword}
         onLogout={handleLogout}
+      />
+      <DeviceInfoModal
+        isOpen={isDeviceInfoOpen}
+        onClose={() => setIsDeviceInfoOpen(false)}
+        deviceStatus={deviceStatus}
+      />
+      <WifiConfigModal
+        isOpen={isWifiConfigOpen}
+        onClose={() => setIsWifiConfigOpen(false)}
+        deviceStatus={deviceStatus}
       />
     </div>
   );

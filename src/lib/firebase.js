@@ -5,7 +5,8 @@ import {
   onValue, 
   set, 
   remove, 
-  off 
+  off,
+  get
 } from "firebase/database";
 import {
   getAuth,
@@ -14,7 +15,10 @@ import {
   sendPasswordResetEmail,
   signOut,
   onAuthStateChanged,
-  updateProfile
+  updateProfile,
+  updatePassword,
+  EmailAuthProvider,
+  reauthenticateWithCredential
 } from "firebase/auth";
 
 const firebaseConfig = {
@@ -76,6 +80,50 @@ export async function resetPassword(email) {
   await sendPasswordResetEmail(auth, email);
 }
 
+export async function updateUserProfile(uid, profileData) {
+  if (!auth) throw new Error("Auth not initialized");
+  // Update Firebase Auth display name
+  if (auth.currentUser && profileData.displayName) {
+    await updateProfile(auth.currentUser, { displayName: profileData.displayName });
+  }
+  // Save extended profile to RTDB
+  if (db && uid) {
+    await set(ref(db, `users/${uid}/profile`), {
+      ...profileData,
+      updatedAt: Date.now()
+    });
+    // Also cache to localStorage
+    try { localStorage.setItem(`smartsofa_profile_${uid}`, JSON.stringify(profileData)); } catch (_) {}
+  }
+}
+
+export async function loadUserProfile(uid) {
+  if (!db || !uid) return null;
+  // Try localStorage first for instant load
+  try {
+    const cached = localStorage.getItem(`smartsofa_profile_${uid}`);
+    if (cached) return JSON.parse(cached);
+  } catch (_) {}
+  // Then fetch from RTDB
+  try {
+    const snap = await get(ref(db, `users/${uid}/profile`));
+    if (snap.exists()) {
+      const val = snap.val();
+      try { localStorage.setItem(`smartsofa_profile_${uid}`, JSON.stringify(val)); } catch (_) {}
+      return val;
+    }
+  } catch (_) {}
+  return null;
+}
+
+export async function changeUserPassword(currentPassword, newPassword) {
+  if (!auth || !auth.currentUser) throw new Error("Not authenticated");
+  const user = auth.currentUser;
+  const cred = EmailAuthProvider.credential(user.email, currentPassword);
+  await reauthenticateWithCredential(user, cred);
+  await updatePassword(user, newPassword);
+}
+
 export function onAuthChange(callback) {
   if (!auth) {
     callback(null);
@@ -98,19 +146,27 @@ export const DEFAULT_SOFA_STATUS = {
 };
 
 export const DEFAULT_CONTROLS = {
+  deviceName: "SmartSofa",
+  fanName: "Cooling Fan",
+  lightName: "Ambient Light",
+  relayName: "Main Relay",
+  tempName: "Room Temp",
   fan: false,
   light: true,
   mode: "manual",
   relayStatus: true,
   lightColor: "#3B82F6",
   lightBrightness: 80,
-  fanSpeed: 3
+  fanSpeed: 3,
+  massagerIntensity: 65,
+  heaterTemp: 85
 };
 
 export const DEFAULT_ELECTRICAL_INFO = {
   voltage: 230.4,
   current: 1.85,
   power: 426.2,
+  roomTemp: 24.5,
   dailyEnergy: 3.42,
   weeklyEnergy: 24.8,
   monthlyEnergy: 98.5,
@@ -148,29 +204,82 @@ export const DEFAULT_NOTIFICATIONS = [
 ];
 
 // ─────────────────────────────────────────────
-// DATABASE OPERATIONS
+// DATABASE OPERATIONS (With localStorage Fallback)
 // ─────────────────────────────────────────────
 
 export function subscribePath(path, callback, defaultValue) {
-  if (!db) { callback(defaultValue); return () => {}; }
+  // Load initial value from localStorage if present
+  const localKey = `smartsofa_${path}`;
+  let initial = defaultValue;
+  try {
+    const saved = localStorage.getItem(localKey);
+    if (saved !== null) initial = JSON.parse(saved);
+  } catch (_) {}
+
+  callback(initial);
+
+  if (!db) return () => {};
+
   const dbRef = ref(db, path);
   const listener = onValue(dbRef, (snap) => {
-    callback(snap.exists() ? snap.val() : defaultValue);
+    if (snap.exists()) {
+      const val = snap.val();
+      callback(val);
+      try { localStorage.setItem(localKey, JSON.stringify(val)); } catch (_) {}
+    }
   }, (err) => {
-    console.warn(`Firebase read error for ${path}:`, err);
-    callback(defaultValue);
+    // Quiet warning if permission denied or network offline
   });
+
   return () => off(dbRef, 'value', listener);
 }
 
 export async function updateControl(field, value) {
+  try {
+    const saved = localStorage.getItem('smartsofa_controls');
+    const controls = saved ? JSON.parse(saved) : { ...DEFAULT_CONTROLS };
+    controls[field] = value;
+    localStorage.setItem('smartsofa_controls', JSON.stringify(controls));
+  } catch (_) {}
+
   if (!db) return;
   try { await set(ref(db, `controls/${field}`), value); }
-  catch (e) { console.warn("updateControl error:", e); }
+  catch (_) {}
 }
 
 export async function updateSofaStatus(field, value) {
+  try {
+    const saved = localStorage.getItem('smartsofa_sofa');
+    const sofa = saved ? JSON.parse(saved) : { ...DEFAULT_SOFA_STATUS };
+    sofa[field] = value;
+    localStorage.setItem('smartsofa_sofa', JSON.stringify(sofa));
+  } catch (_) {}
+
   if (!db) return;
   try { await set(ref(db, `sofa/${field}`), value); }
-  catch (e) { console.warn("updateSofaStatus error:", e); }
+  catch (_) {}
 }
+
+export async function updateElectricalInfo(field, value) {
+  try {
+    const saved = localStorage.getItem('smartsofa_electrical');
+    const elec = saved ? JSON.parse(saved) : { ...DEFAULT_ELECTRICAL_INFO };
+    elec[field] = value;
+    localStorage.setItem('smartsofa_electrical', JSON.stringify(elec));
+  } catch (_) {}
+
+  if (!db) return;
+  try { await set(ref(db, `electrical/${field}`), value); }
+  catch (_) {}
+}
+
+export async function updateNotifications(notificationsList) {
+  try {
+    localStorage.setItem('smartsofa_notifications', JSON.stringify(notificationsList));
+  } catch (_) {}
+
+  if (!db) return;
+  try { await set(ref(db, 'notifications'), notificationsList); }
+  catch (_) {}
+}
+
