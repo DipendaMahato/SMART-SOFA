@@ -14,3 +14,6 @@
 .cxx
 local.properties
 .kotlin/
+node_modules/
+index.html
+package-lock.json
