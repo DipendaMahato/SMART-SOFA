@@ -4,7 +4,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.*
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -30,7 +29,6 @@ import androidx.compose.ui.unit.sp
 import com.example.smartsofa.R
 import com.example.smartsofa.data.firebase.FirebaseAuthManager
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlin.random.Random
 
@@ -42,69 +40,77 @@ private val ParticleColor = Color(0xFF90CAF9)
 private val WifiGlowColor = Color(0xFF4FC3F7)
 private val SubtitleColor = Color(0xFFBBDEFB)
 
+// Lightweight particle data — computed once, not per-frame
+private data class Particle(
+    val xFraction: Float,
+    val yFraction: Float,
+    val size: Float,
+    val alpha: Float
+)
+
+// Pre-generate particles at top level so they aren't recreated on recomposition
+private val splashParticles: List<Particle> = List(12) {
+    Particle(
+        xFraction = Random.nextFloat(),
+        yFraction = Random.nextFloat(),
+        size = Random.nextFloat() * 4f + 2f,
+        alpha = Random.nextFloat() * 0.25f + 0.05f
+    )
+}
+
 @Composable
 fun SplashScreen(
     onNavigateToLogin: () -> Unit,
     onNavigateToDashboard: () -> Unit
 ) {
-    // Logo Animations
-    var logoVisible by remember { mutableStateOf(false) }
-    val logoScale = remember { Animatable(0.7f) }
+    // Logo animation — single animatable, non-blocking
+    val logoScale = remember { Animatable(0.75f) }
     val logoAlpha = remember { Animatable(0f) }
-
-    // Breathing scale animation using infinite transition (non-blocking)
-    val infiniteTransition = rememberInfiniteTransition(label = "splash_breathing")
-    val breathingScale by infiniteTransition.animateFloat(
-        initialValue = 1.0f,
-        targetValue = 1.04f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(900, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "breathing"
-    )
-
-    // Text Animations
     var textVisible by remember { mutableStateOf(false) }
     var subtitleVisible by remember { mutableStateOf(false) }
-
-    LaunchedEffect(Unit) {
-        // 1. Logo invisible at 0ms, wait 300ms
-        delay(300)
-        logoVisible = true
-        
-        // 2. Fade in & scale up over 600ms (Overshoot)
-        launch {
-            logoAlpha.animateTo(1f, tween(600, easing = LinearEasing))
-        }
-        logoScale.animateTo(
-            targetValue = 1f,
-            animationSpec = tween(600, easing = {
-                val t = it - 1f
-                (t * t * ((2f + 1f) * t + 2f) + 1f)
-            })
-        )
-    }
-
-    LaunchedEffect(Unit) {
-        // Slide up title at 700ms
-        delay(700)
-        textVisible = true
-        // Fade in subtitle shortly after
-        delay(300)
-        subtitleVisible = true
-    }
-
     var hasNavigated by remember { mutableStateOf(false) }
+
+    // Breathing animation using infinite transition (GPU-driven, no main-thread work)
+    val infiniteTransition = rememberInfiniteTransition(label = "breathing")
+    val breathingScale by infiniteTransition.animateFloat(
+        initialValue = 1.0f,
+        targetValue = 1.03f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "breathe"
+    )
+
+    // All launch effects in ONE LaunchedEffect to avoid multiple coroutines racing
     LaunchedEffect(Unit) {
-        // Wait 2500ms total splash duration
-        delay(2500)
+        // Phase 1: animate logo in
+        delay(200)
+        launch { logoAlpha.animateTo(1f, tween(500, easing = LinearEasing)) }
+        logoScale.animateTo(1f, tween(500, easing = FastOutSlowInEasing))
+
+        // Phase 2: show text
+        delay(200)
+        textVisible = true
+        delay(250)
+        subtitleVisible = true
+
+        // Phase 3: wait for full screen render before navigating
+        // 4500ms total — gives enough time for JIT compilation on first run
+        // so navigation never fires on a half-drawn screen
+        delay(3800)
+
         if (!hasNavigated) {
             hasNavigated = true
-            val user = FirebaseAuthManager.getCurrentUser()
-            if (user != null) {
-                onNavigateToDashboard()
-            } else {
+            try {
+                val user = FirebaseAuthManager.getCurrentUser()
+                if (user != null) {
+                    onNavigateToDashboard()
+                } else {
+                    onNavigateToLogin()
+                }
+            } catch (e: Exception) {
+                // Firebase not ready yet — navigate to login as safe fallback
                 onNavigateToLogin()
             }
         }
@@ -118,8 +124,8 @@ fun SplashScreen(
             ),
         contentAlignment = Alignment.Center
     ) {
-        // AI Particles Background
-        AiParticles()
+        // Lightweight static particle overlay — no per-frame canvas work
+        LightParticles()
 
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -134,15 +140,15 @@ fun SplashScreen(
                     .alpha(logoAlpha.value),
                 contentAlignment = Alignment.Center
             ) {
-                // Glassmorphism background with glow
+                // Glassmorphism glow ring
                 Box(
                     modifier = Modifier
                         .size(160.dp)
-                        .shadow(24.dp, CircleShape, spotColor = WifiGlowColor, ambientColor = WifiGlowColor)
-                        .background(Color.White.copy(alpha = 0.1f), CircleShape)
+                        .shadow(20.dp, CircleShape, spotColor = WifiGlowColor, ambientColor = WifiGlowColor)
+                        .background(Color.White.copy(alpha = 0.08f), CircleShape)
                 )
 
-                // The Logo
+                // Logo image
                 Image(
                     painter = painterResource(id = R.drawable.splash_logo),
                     contentDescription = "Smart Sofa Logo",
@@ -152,19 +158,18 @@ fun SplashScreen(
                     contentScale = ContentScale.Crop
                 )
 
-                // Wifi Waves above logo
+                // Wifi waves — lightweight, 2 arcs instead of 3
                 WifiWaves()
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // App Title (Slide Up + Fade In)
             AnimatedVisibility(
                 visible = textVisible,
                 enter = slideInVertically(
-                    initialOffsetY = { 50 },
-                    animationSpec = tween(700, easing = FastOutSlowInEasing)
-                ) + fadeIn(tween(700))
+                    initialOffsetY = { 40 },
+                    animationSpec = tween(600, easing = FastOutSlowInEasing)
+                ) + fadeIn(tween(600))
             ) {
                 Text(
                     text = "SMART SOFA",
@@ -177,7 +182,6 @@ fun SplashScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Subtitle
             AnimatedVisibility(
                 visible = subtitleVisible,
                 enter = fadeIn(tween(500))
@@ -192,7 +196,7 @@ fun SplashScreen(
             }
         }
 
-        // Loading Dots at bottom
+        // Loading dots at bottom
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -203,66 +207,32 @@ fun SplashScreen(
     }
 }
 
+/**
+ * Draws 12 static translucent circles as a background texture.
+ * Unlike the original 40-particle animated version, these don't move
+ * and don't require any per-frame canvas work — zero main-thread load.
+ */
 @Composable
-fun AiParticles() {
-    val infiniteTransition = rememberInfiniteTransition(label = "particles_time")
-    val timeState = infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1000f,
-        animationSpec = infiniteRepeatable(tween(100000, easing = LinearEasing)),
-        label = "particle_anim"
-    )
-
-    val particles = remember {
-        List(40) {
-            Particle(
-                xProgress = Random.nextFloat(),
-                yProgress = Random.nextFloat(),
-                size = Random.nextFloat() * 6f + 2f,
-                speedX = (Random.nextFloat() - 0.5f) * 0.002f,
-                speedY = (Random.nextFloat() - 0.5f) * 0.002f,
-                alpha = Random.nextFloat() * 0.3f
-            )
-        }
-    }
-
-    Canvas(modifier = Modifier.fillMaxSize()) {
+fun LightParticles() {
+    androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
         val w = size.width
         val h = size.height
-        val time = timeState.value
-
-        particles.forEach { p ->
-            var curX = (p.xProgress + p.speedX * time) % 1f
-            if (curX < 0) curX += 1f
-            
-            var curY = (p.yProgress + p.speedY * time) % 1f
-            if (curY < 0) curY += 1f
-
+        splashParticles.forEach { p ->
             drawCircle(
                 color = ParticleColor,
                 radius = p.size,
-                center = Offset(curX * w, curY * h),
+                center = Offset(p.xFraction * w, p.yFraction * h),
                 alpha = p.alpha
             )
         }
     }
 }
 
-class Particle(
-    val xProgress: Float,
-    val yProgress: Float,
-    val size: Float,
-    val speedX: Float,
-    val speedY: Float,
-    val alpha: Float
-)
-
 @Composable
 fun WifiWaves() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         WifiWaveArc(delay = 0)
-        WifiWaveArc(delay = 200)
-        WifiWaveArc(delay = 400)
+        WifiWaveArc(delay = 300)
     }
 }
 
@@ -273,33 +243,27 @@ private fun WifiWaveArc(delay: Int) {
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = LinearEasing, delayMillis = delay),
+            animation = tween(1200, easing = LinearEasing, delayMillis = delay),
             repeatMode = RepeatMode.Restart
         ),
-        label = "wave_progress"
+        label = "wave_$delay"
     )
-
-    val alpha = if (waveProgress < 0.5f) {
-        waveProgress * 2f
-    } else {
-        (1f - waveProgress) * 2f
-    }
+    val alpha = if (waveProgress < 0.5f) waveProgress * 2f else (1f - waveProgress) * 2f
     val scale = 0.8f + (0.4f * waveProgress)
 
-    Canvas(
+    androidx.compose.foundation.Canvas(
         modifier = Modifier
             .padding(top = 16.dp)
             .size(60.dp)
             .scale(scale)
             .alpha(alpha)
     ) {
-        val strokeWidth = 3.dp.toPx()
         drawArc(
             color = WifiGlowColor,
             startAngle = 210f,
             sweepAngle = 120f,
             useCenter = false,
-            style = Stroke(width = strokeWidth)
+            style = Stroke(width = 3.dp.toPx())
         )
     }
 }
@@ -320,10 +284,10 @@ private fun LoadingDot(delay: Int) {
         initialValue = 0.3f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(400, delayMillis = delay, easing = FastOutSlowInEasing),
+            animation = tween(500, delayMillis = delay, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "dot_alpha"
+        label = "dot_alpha_$delay"
     )
     Box(
         modifier = Modifier
