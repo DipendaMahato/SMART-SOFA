@@ -12,6 +12,7 @@ import WifiConfigModal from './components/WifiConfigModal';
 
 import {
   subscribePath,
+  subscribeConnectionState,
   updateControl,
   updateSofaStatus,
   updateElectricalInfo,
@@ -68,6 +69,8 @@ export default function App() {
 
   useEffect(() => {
     if (!user) return;
+
+    // 1. Primary paths
     const u1 = subscribePath('sofa', setSofaStatus, DEFAULT_SOFA_STATUS);
     const u2 = subscribePath('controls', setControls, DEFAULT_CONTROLS);
     const u3 = subscribePath('electrical', setElectricalInfo, DEFAULT_ELECTRICAL_INFO);
@@ -79,7 +82,87 @@ export default function App() {
         setNotifications(Array.isArray(val) ? val : DEFAULT_NOTIFICATIONS);
       }
     }, DEFAULT_NOTIFICATIONS);
-    return () => { u1(); u2(); u3(); u4(); u5(); };
+
+    // 2. Hardware telemetry handshake: liveData/SS001
+    const u6 = subscribePath('liveData/SS001', (liveData) => {
+      if (!liveData) return;
+      if (liveData.seatOccupied !== undefined) {
+        setSofaStatus(prev => ({
+          ...prev,
+          occupied: liveData.seatOccupied,
+          lastOccupiedAt: liveData.seatOccupied ? Date.now() : prev.lastOccupiedAt
+        }));
+      }
+      if (liveData.temperature !== undefined) {
+        setElectricalInfo(prev => ({ ...prev, roomTemp: liveData.temperature }));
+      }
+      if (liveData.humidity !== undefined) {
+        setElectricalInfo(prev => ({ ...prev, humidity: liveData.humidity }));
+      }
+      if (liveData.fanRunning !== undefined) {
+        setControls(prev => ({ ...prev, fan: liveData.fanRunning }));
+      }
+      if (liveData.lightRunning !== undefined) {
+        setControls(prev => ({ ...prev, light: liveData.lightRunning }));
+      }
+      if (liveData.relayStatus !== undefined) {
+        setControls(prev => ({ ...prev, relayStatus: liveData.relayStatus }));
+        setElectricalInfo(prev => ({ ...prev, relayStatus: liveData.relayStatus }));
+      }
+      if (liveData.wifiConnected !== undefined || liveData.firebaseConnected !== undefined) {
+        setDeviceStatus(prev => ({
+          ...prev,
+          wifiConnected: liveData.wifiConnected ?? prev.wifiConnected,
+          firebaseConnected: liveData.firebaseConnected ?? prev.firebaseConnected,
+          internetConnected: liveData.internetConnected ?? prev.internetConnected
+        }));
+      }
+    });
+
+    // 3. Power monitoring handshake: powerMonitoring/SS001
+    const u7 = subscribePath('powerMonitoring/SS001', (pm) => {
+      if (!pm) return;
+      setElectricalInfo(prev => ({
+        ...prev,
+        voltage: pm.voltage ?? prev.voltage,
+        current: pm.current ?? prev.current,
+        power: pm.activePower ?? pm.power ?? prev.power,
+        dailyEnergy: pm.energyToday ?? prev.dailyEnergy,
+        weeklyEnergy: pm.energyWeek ?? prev.weeklyEnergy,
+        monthlyEnergy: pm.energyMonth ?? prev.monthlyEnergy,
+        totalEnergy: pm.totalEnergy ?? prev.totalEnergy
+      }));
+    });
+
+    // 4. Devices handshake: devices/SS001
+    const u8 = subscribePath('devices/SS001', (devSS001) => {
+      if (!devSS001) return;
+      const controllers = devSS001.controllers || {};
+      const devInfo = devSS001.deviceInfo || {};
+      const espA = controllers.ESP32_A || {};
+      const espB = controllers.ESP32_B || {};
+
+      setDeviceStatus(prev => ({
+        ...prev,
+        esp32aOnline: espA.connected ?? espA.status === 'Online' ?? prev.esp32aOnline,
+        esp32bOnline: espB.connected ?? espB.status === 'Online' ?? prev.esp32bOnline,
+        ipAddress: espA.ipAddress || prev.ipAddress,
+        macAddress: espA.macAddress || prev.macAddress,
+        signalStrength: espA.signalStrength || prev.signalStrength,
+        uptimeSeconds: espA.uptime || prev.uptimeSeconds,
+        deviceName: devInfo.deviceName || prev.deviceName,
+        deviceId: devInfo.deviceID || prev.deviceId,
+        firmwareVersion: devInfo.firmwareVersion || prev.firmwareVersion,
+        hardwareVersion: devInfo.hardwareVersion || prev.hardwareVersion
+      }));
+    });
+
+    // 5. Connection State WebSocket listener
+    const u9 = subscribeConnectionState((connected) => {
+      setDeviceStatus(prev => ({ ...prev, firebaseConnected: connected }));
+    });
+
+    return () => { u1(); u2(); u3(); u4(); u5(); u6(); u7(); u8(); u9(); };
   }, [user]);
 
   const handleControlChange = async (field, value) => {
@@ -130,7 +213,6 @@ export default function App() {
   };
 
   const handleLogout = async () => { await logoutUser(); };
-
 
   const unreadCount = notifications.filter(n => !n.read).length;
 

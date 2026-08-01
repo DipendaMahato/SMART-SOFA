@@ -21,13 +21,20 @@ export default function Header({
     <header className="w-full py-4 px-4 lg:px-8 z-40 sticky top-0 backdrop-blur-xl bg-[#060813]/70 border-b border-white/5">
       <div className="max-w-[1400px] mx-auto flex items-center justify-between">
         
-        {/* Left: Brand Pill Badge */}
-        <div className="flex items-center gap-3 bg-[#11192e]/90 border border-white/10 rounded-full px-4 py-1.5 shadow-lg backdrop-blur-md">
-          <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-blue-600 to-cyan-400 flex items-center justify-center shadow-md">
-            <Armchair className="w-4 h-4 text-white" />
+        {/* Left: Brand Pill Badge & Firebase RTDB Sync */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 bg-[#11192e]/90 border border-white/10 rounded-full px-4 py-1.5 shadow-lg backdrop-blur-md">
+            <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-blue-600 to-cyan-400 flex items-center justify-center shadow-md">
+              <Armchair className="w-4 h-4 text-white" />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-base font-extrabold text-white tracking-tight">{deviceName || 'SmartSofa'}</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-base font-extrabold text-white tracking-tight">{deviceName || 'SmartSofa'}</span>
+
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#11192e]/90 border border-emerald-500/30 text-emerald-400 text-[11px] font-bold shadow-md">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping shadow-[0_0_8px_#34d399]" />
+            <span>Firebase RTDB Sync</span>
           </div>
         </div>
 
