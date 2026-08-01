@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { X, Settings, User, LogOut, Shield, Cpu, Fan, Lightbulb, Zap, Thermometer, Check, Save, Sparkles, Edit3, Lock, KeyRound, Eye, EyeOff, Mail, RefreshCw, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 
 function OTPBox({ otp, onChange, disabled }) {
@@ -212,7 +212,7 @@ export default function SettingsModal({ isOpen, onClose, user, userProfile, cont
               <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-cyan-400"/>Customize Tile Labels</h4>
               <p className="text-xs text-slate-500">Changes reflect in Control Panel after saving.</p>
               {[
-                {k:"deviceName",l:"Main Device Title",I:Cpu,c:"text-blue-400",f:"focus:border-blue-500",ph:"SmartSofa PRO"},
+                {k:"deviceName",l:"Main Device Title",I:Cpu,c:"text-blue-400",f:"focus:border-blue-500",ph:"SmartSofa"},
                 {k:"fanName",l:"Cooling Fan Tile",I:Fan,c:"text-cyan-400",f:"focus:border-cyan-500",ph:"Seat Fan"},
                 {k:"lightName",l:"Ambient Light Tile",I:Lightbulb,c:"text-amber-400",f:"focus:border-amber-500",ph:"Mood Lighting"},
                 {k:"relayName",l:"Main Relay Tile",I:Zap,c:"text-emerald-400",f:"focus:border-emerald-500",ph:"Main Power"},

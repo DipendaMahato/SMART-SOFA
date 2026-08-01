@@ -28,9 +28,6 @@ export default function Header({
           </div>
           <div className="flex items-center gap-2">
             <span className="text-base font-extrabold text-white tracking-tight">{deviceName || 'SmartSofa'}</span>
-            <span className="text-[10px] font-black tracking-wider px-2 py-0.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white border border-blue-400/40 shadow-sm uppercase">
-              PRO
-            </span>
           </div>
         </div>
 

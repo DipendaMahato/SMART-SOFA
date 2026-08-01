@@ -199,3 +199,448 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .glow-emerald { box-shadow: 0 0 20px rgba(16, 185, 129, 0.35); }
 .glow-amber { box-shadow: 0 0 20px rgba(245, 158, 11, 0.35); }
 .glow-rose { box-shadow: 0 0 20px rgba(239, 68, 68, 0.35); }
+
+/* ═══════════════════════════════════════════════════
+   AUTH PAGE — Figma-Grade SaaS Login System
+   ═══════════════════════════════════════════════════ */
+
+/* Page entrance */
+@keyframes pageIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-page-in {
+  animation: pageIn 600ms ease-out forwards;
+}
+
+/* Ambient glow orbs drifting */
+@keyframes orbDrift {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(40px, -30px) scale(1.12); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+.animate-orb {
+  animation: orbDrift 20s ease-in-out infinite;
+}
+
+/* Hero text reveal — staggered slide up with blur */
+@keyframes textReveal {
+  from { opacity: 0; transform: translateY(30px); filter: blur(6px); }
+  to   { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+.animate-text-reveal {
+  opacity: 0;
+  animation: textReveal 800ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Workflow card slide in from left */
+@keyframes cardSlideIn {
+  from { opacity: 0; transform: translateX(-40px) scale(0.96); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+.animate-card-slide {
+  opacity: 0;
+  animation: cardSlideIn 700ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Login card float up */
+@keyframes loginFloat {
+  from { opacity: 0; transform: translateY(24px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-login-float {
+  animation: loginFloat 700ms 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Neon border pulse */
+@keyframes neonPulse {
+  0%, 100% { opacity: 0.6; box-shadow: 0 0 15px var(--neon, rgba(6,182,212,0.3)); }
+  50%      { opacity: 1;   box-shadow: 0 0 30px var(--neon, rgba(6,182,212,0.5)), 0 0 60px var(--neon, rgba(6,182,212,0.15)); }
+}
+.animate-neon-pulse {
+  animation: neonPulse 3s ease-in-out infinite;
+}
+
+/* Gradient text shimmer */
+@keyframes shimmerText {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+.shimmer-gradient-text {
+  background: linear-gradient(90deg, #e2e8f0 0%, #60a5fa 25%, #a78bfa 50%, #60a5fa 75%, #e2e8f0 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmerText 5s linear infinite;
+}
+
+/* Stat line reveal */
+@keyframes statIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-stat {
+  opacity: 0;
+  animation: statIn 500ms ease-out forwards;
+}
+
+/* Button gradient animation */
+@keyframes btnGradient {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Floating particles */
+@keyframes particleDrift {
+  0%   { transform: translateY(0) translateX(0); opacity: 0; }
+  15%  { opacity: 0.6; }
+  85%  { opacity: 0.4; }
+  100% { transform: translateY(-140px) translateX(25px); opacity: 0; }
+}
+.animate-particle-drift {
+  animation: particleDrift 8s ease-out infinite;
+}
+
+/* ── Neon-bordered workflow card ── */
+.neon-workflow-card {
+  position: relative;
+  background: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--neon-border, rgba(6, 182, 212, 0.35));
+  border-radius: 20px;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+.neon-workflow-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(ellipse at 0% 50%, var(--neon-bg, rgba(6,182,212,0.06)) 0%, transparent 70%);
+  pointer-events: none;
+}
+.neon-workflow-card:hover {
+  transform: translateY(-3px) translateX(4px);
+  border-color: var(--neon-hover, rgba(6, 182, 212, 0.6));
+  box-shadow: 0 0 40px var(--neon-shadow, rgba(6, 182, 212, 0.15)), 0 20px 50px -12px rgba(0,0,0,0.4);
+}
+
+/* ── Login glass card ── */
+.login-glass-card {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 28px;
+  box-shadow:
+    0 0 40px rgba(59, 130, 246, 0.08),
+    0 32px 64px -16px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition: border-color 0.4s ease, box-shadow 0.4s ease;
+}
+.login-glass-card:hover {
+  border-color: rgba(59, 130, 246, 0.40);
+  box-shadow:
+    0 0 60px rgba(59, 130, 246, 0.12),
+    0 32px 64px -16px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+}
+
+/* ── Input fields ── */
+.login-input {
+  height: 56px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  color: #FFFFFF;
+  font-size: 15px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.login-input:focus-within {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15), 0 0 24px rgba(59, 130, 246, 0.06);
+}
+
+/* ── Primary button ── */
+.login-btn {
+  height: 56px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 40%, #3b82f6 100%);
+  background-size: 200% 200%;
+  color: white;
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.01em;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 8px 32px -8px rgba(37, 99, 235, 0.4);
+}
+.login-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 44px -8px rgba(37, 99, 235, 0.55);
+  animation: btnGradient 3s ease infinite;
+}
+.login-btn:active { transform: translateY(0); }
+.login-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: 0 4px 16px -4px rgba(37, 99, 235, 0.2) !important;
+  animation: none !important;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .animate-page-in, .animate-orb, .animate-text-reveal,
+  .animate-card-slide, .animate-login-float, .animate-neon-pulse,
+  .shimmer-gradient-text, .animate-particle-drift, .animate-stat {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+  .neon-workflow-card:hover, .login-btn:hover { transform: none; }
+}
+
+/* Hero Image Ken Burns slow zoom-pan effect */
+@keyframes kenBurns {
+  0%   { transform: scale(1.05) translate(0%, 0%); }
+  33%  { transform: scale(1.12) translate(-1.5%, -1%); }
+  66%  { transform: scale(1.08) translate(1%, -0.5%); }
+  100% { transform: scale(1.05) translate(0%, 0%); }
+}
+.animate-ken-burns {
+  animation: kenBurns 30s ease-in-out infinite;
+}
+
+/* Soft ambient glow movement */
+@keyframes ambientDrift {
+  0%   { transform: translate(0, 0) scale(1); opacity: 0.18; }
+  50%  { transform: translate(50px, -35px) scale(1.15); opacity: 0.35; }
+  100% { transform: translate(0, 0) scale(1); opacity: 0.18; }
+}
+.animate-ambient-light {
+  animation: ambientDrift 18s ease-in-out infinite;
+}
+
+/* Page-level entrance fade */
+@keyframes pageEntrance {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-page-entrance {
+  animation: pageEntrance 700ms ease-out forwards;
+}
+
+/* Staggered card entrance from bottom */
+@keyframes cardSlideUp {
+  from { opacity: 0; transform: translateY(28px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-card-enter {
+  opacity: 0;
+  animation: cardSlideUp 600ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Hero headline slide-up reveal */
+@keyframes heroReveal {
+  from { opacity: 0; transform: translateY(24px); filter: blur(4px); }
+  to   { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+.animate-hero-reveal {
+  animation: heroReveal 800ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Login card entrance with scale */
+@keyframes cardFloat {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-login-card {
+  animation: cardFloat 700ms 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Shimmer gradient text animation */
+@keyframes shimmerGrad {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+.shimmer-text-auth {
+  background: linear-gradient(
+    90deg,
+    #60a5fa 0%,
+    #38bdf8 25%,
+    #a78bfa 50%,
+    #38bdf8 75%,
+    #60a5fa 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmerGrad 4s linear infinite;
+}
+
+/* Floating particle dots */
+@keyframes particleFloat {
+  0%   { transform: translateY(0) translateX(0); opacity: 0; }
+  20%  { opacity: 0.7; }
+  80%  { opacity: 0.5; }
+  100% { transform: translateY(-120px) translateX(30px); opacity: 0; }
+}
+.animate-particle {
+  animation: particleFloat 6s ease-out infinite;
+}
+
+/* Button gradient shift on hover */
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Pulse ring for feature card icons */
+@keyframes pulseRing {
+  0%   { transform: scale(1); opacity: 0.6; }
+  50%  { transform: scale(1.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+/* Stat counter fade-in */
+@keyframes statReveal {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-stat-reveal {
+  animation: statReveal 500ms ease-out forwards;
+}
+
+/* ── Glass morphism cards ── */
+.auth-glass-card {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow:
+    0 32px 64px -16px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Feature card with colorful left border accent */
+.feature-card {
+  background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.3);
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+.feature-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--accent-color, #3b82f6);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.feature-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow:
+    0 16px 48px -8px rgba(0, 0, 0, 0.4),
+    0 0 30px var(--glow-color, rgba(59, 130, 246, 0.12));
+}
+.feature-card:hover::before {
+  opacity: 1;
+}
+
+/* ── Input fields ── */
+.auth-input-field {
+  height: 56px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  color: #FFFFFF;
+  font-size: 15px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.auth-input-field:focus-within {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18), 0 0 20px rgba(59, 130, 246, 0.06);
+}
+
+/* ── Primary CTA Button ── */
+.auth-btn-primary {
+  height: 56px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 50%, #0ea5e9 100%);
+  background-size: 200% 200%;
+  color: white;
+  font-weight: 600;
+  font-size: 15px;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.auth-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px -8px rgba(37, 99, 235, 0.5);
+  animation: gradientShift 3s ease infinite;
+}
+.auth-btn-primary:active {
+  transform: translateY(0);
+}
+.auth-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Ripple click effect */
+.auth-btn-primary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), rgba(255,255,255,0.25) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.auth-btn-primary:active::after {
+  opacity: 1;
+}
+
+/* Reduced motion accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .animate-ken-burns,
+  .animate-ambient-light,
+  .animate-particle,
+  .animate-card-enter,
+  .animate-hero-reveal,
+  .animate-login-card,
+  .shimmer-text-auth {
+    animation: none !important;
+  }
+  .feature-card:hover {
+    transform: none;
+  }
+  .auth-btn-primary:hover {
+    transform: none;
+    animation: none;
+  }
+}
